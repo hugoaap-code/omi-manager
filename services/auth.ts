@@ -8,103 +8,55 @@ export interface UserProfile {
     timezone?: string;
 }
 
-const listeners: ((user: UserProfile | null) => void)[] = [];
-
-const notifyListeners = (user: UserProfile | null) => {
-    listeners.forEach(callback => callback(user));
-};
+// Chave para armazenar configurações do usuário local
+const LOCAL_USER_KEY = 'omi_local_user_settings';
 
 export const AuthService = {
-    onAuthStateChanged: (callback: (user: UserProfile | null) => void) => {
-        const storedUser = localStorage.getItem('local_user');
-        if (storedUser) {
-            callback(JSON.parse(storedUser));
-        } else {
-            callback(null);
+    // Retorna o usuário local atual ou cria um novo se não existir
+    getCurrentUser: (): UserProfile => {
+        const stored = localStorage.getItem(LOCAL_USER_KEY);
+        if (stored) {
+            return JSON.parse(stored);
         }
 
-        listeners.push(callback);
-        return () => {
-            const index = listeners.indexOf(callback);
-            if (index > -1) listeners.splice(index, 1);
-        };
-    },
-
-    login: async (email: string, password: string): Promise<UserProfile> => {
-        if (!email || !password) throw new Error("Email and password required");
-
-        const user: UserProfile = {
-            uid: 'local-user-' + email,
-            email: email,
-            displayName: email.split('@')[0],
+        // Criar usuário padrão inicial
+        const defaultUser: UserProfile = {
+            uid: 'local-owner', // ID fixo para app single-user
+            email: 'local@omi.manager', // Placeholder visual
+            displayName: 'My Omi',
             photoURL: null,
             timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
         };
-        localStorage.setItem('local_user', JSON.stringify(user));
-        notifyListeners(user);
-        return user;
+        
+        localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(defaultUser));
+        return defaultUser;
     },
 
-    signup: async (name: string, email: string, password: string): Promise<UserProfile> => {
-        if (!email || !password) throw new Error("Email and password required");
-        const user: UserProfile = {
-            uid: 'local-user-' + email,
-            email: email,
-            displayName: name,
-            photoURL: null,
-            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
-        };
-        localStorage.setItem('local_user', JSON.stringify(user));
-        notifyListeners(user);
-        return user;
-    },
-
-    recoverPassword: async (email: string): Promise<void> => {
-        // Mock recovery
-        return;
-    },
-
-    logout: async (): Promise<void> => {
-        localStorage.removeItem('local_user');
-        notifyListeners(null);
-        window.location.reload();
+    // Apenas para compatibilidade com hooks existentes, retorna o usuário imediatamente
+    onAuthStateChanged: (callback: (user: UserProfile | null) => void) => {
+        const user = AuthService.getCurrentUser();
+        callback(user);
+        return () => {}; // Unsubscribe mock
     },
 
     updateProfile: async (updates: Partial<UserProfile>): Promise<UserProfile> => {
-        const stored = localStorage.getItem('local_user');
-        if (stored) {
-            const user = JSON.parse(stored);
-            const updated = { ...user, ...updates };
-            localStorage.setItem('local_user', JSON.stringify(updated));
-            notifyListeners(updated);
-            return updated;
-        }
-        throw new Error("No user logged in");
+        const currentUser = AuthService.getCurrentUser();
+        const updated = { ...currentUser, ...updates };
+        localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(updated));
+        
+        // Disparar evento de storage para atualizar em outras abas/componentes se necessário
+        window.dispatchEvent(new Event('local-user-update'));
+        return updated;
     },
 
-    updateOmiToken: async (uid: string, token: string): Promise<void> => {
-        const stored = localStorage.getItem('local_user');
-        if (stored) {
-            const user = JSON.parse(stored);
-            const updated = { ...user, omiToken: token };
-            localStorage.setItem('local_user', JSON.stringify(updated));
-            notifyListeners(updated);
-        }
+    updateOmiToken: async (token: string): Promise<void> => {
+        return await AuthService.updateProfile({ omiToken: token }) as any;
     },
 
-    updateTimezone: async (uid: string, timezone: string): Promise<void> => {
-        const stored = localStorage.getItem('local_user');
-        if (stored) {
-            const user = JSON.parse(stored);
-            const updated = { ...user, timezone };
-            localStorage.setItem('local_user', JSON.stringify(updated));
-            notifyListeners(updated);
-        }
-    },
-
-    deleteAccount: async (uid: string): Promise<void> => {
-        localStorage.removeItem('local_user');
-        notifyListeners(null);
+    // Logout reseta para o estado padrão (opcional, mas útil para "limpar" configurações)
+    logout: async (): Promise<void> => {
+        // Em app local sem login, "logout" não faz muito sentido, 
+        // mas podemos usar para recarregar a página
         window.location.reload();
     }
 };
