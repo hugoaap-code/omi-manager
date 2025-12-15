@@ -55,8 +55,20 @@ export const AuthService = {
         return updated;
     },
 
-    updateOmiToken: async (token: string): Promise<void> => {
-        return await AuthService.updateProfile({ omiToken: token }) as any;
+    updateOmiToken: async (_uid: string | undefined, token: string): Promise<void> => {
+        // Ignoramos o UID pois é local monousuário
+        await AuthService.updateProfile({ omiToken: token });
+    },
+
+    updateTimezone: async (_uid: string | undefined, timezone: string): Promise<void> => {
+        await AuthService.updateProfile({ timezone });
+    },
+
+    deleteAccount: async (_uid: string): Promise<void> => {
+        localStorage.removeItem(LOCAL_USER_KEY);
+        // Limpar dados do banco também
+        // window.location.reload(); // App.tsx lidará com logout/reload
+        window.location.reload();
     },
 
     // Logout reseta para o estado padrão (opcional, mas útil para "limpar" configurações)

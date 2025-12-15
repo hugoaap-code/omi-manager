@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Icons } from './Icons';
 import { AuthService, UserProfile } from '../services/auth';
 import { ApiService } from '../services/api';
-import { TermsModal } from './TermsModal';
+
 
 // --- SYNC MODAL ---
 
@@ -158,7 +158,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onThemeCh
     const [token, setToken] = useState('');
     const [saved, setSaved] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
-    const [showTerms, setShowTerms] = useState(false);
+
 
     useEffect(() => {
         if (user && user.omiToken) {
@@ -310,22 +310,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onThemeCh
                             </div>
                         </div>
 
-                        {/* Terms of Service */}
-                        <div className="pt-4 border-t border-gray-200 dark:border-white/5">
-                            <button
-                                onClick={() => setShowTerms(true)}
-                                className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5 text-gray-600 dark:text-white/60 hover:text-gray-900 dark:hover:text-white transition-all"
-                            >
-                                <Icons.FileText className="w-4 h-4" />
-                                <span className="text-sm">View Terms of Service</span>
-                            </button>
-                        </div>
+
                     </div>
                 </div>
             </div>
 
-            {/* Terms Modal */}
-            {showTerms && <TermsModal onClose={() => setShowTerms(false)} />}
+
         </>
     );
 };
