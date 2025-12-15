@@ -1,0 +1,527 @@
+
+import React, { useState, useEffect } from 'react';
+import { Icons } from './Icons';
+import { AuthService, UserProfile } from '../services/auth';
+import { ApiService } from '../services/api';
+import { TermsModal } from './TermsModal';
+
+// --- SYNC MODAL ---
+
+interface SyncModalProps {
+    onClose: () => void;
+    onSync: (startDate: Date, endDate: Date) => void;
+    isLoading: boolean;
+    syncProgress?: { message: string; progress: number };
+}
+
+export const SyncModal: React.FC<SyncModalProps> = ({ onClose, onSync, isLoading, syncProgress }) => {
+    const today = new Date();
+    const [startDate, setStartDate] = useState<string>(new Date(today.setDate(today.getDate() - 7)).toISOString().split('T')[0]);
+    const [endDate, setEndDate] = useState<string>(new Date().toISOString().split('T')[0]);
+
+    const handlePreset = (days: number) => {
+        const end = new Date();
+        const start = new Date();
+        start.setDate(end.getDate() - days);
+
+        setEndDate(end.toISOString().split('T')[0]);
+        setStartDate(start.toISOString().split('T')[0]);
+    };
+
+    const handleSyncClick = () => {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        // Set end date to end of day (23:59:59.999)
+        end.setHours(23, 59, 59, 999);
+        onSync(start, end);
+    };
+
+    return (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={!isLoading ? onClose : undefined} />
+            <div className="relative w-full max-w-md glass-panel bg-white dark:bg-[#1A1A1F] p-6 rounded-2xl animate-in fade-in zoom-in-95 duration-200 text-gray-900 dark:text-white">
+
+                <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-blue-500/20 text-blue-500 dark:text-blue-400">
+                            <Icons.Sync className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
+                        </div>
+                        <h3 className="text-lg font-semibold">Sync Omi</h3>
+                    </div>
+                    {!isLoading && <button onClick={onClose} className="opacity-40 hover:opacity-100"><Icons.Close className="w-5 h-5" /></button>}
+                </div>
+
+                <div className="space-y-6">
+                    {/* Progress Section - Show when syncing */}
+                    {isLoading && syncProgress && (
+                        <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                            <div className="flex items-center justify-between text-sm">
+                                <span className="text-gray-600 dark:text-white/70">{syncProgress.message}</span>
+                                <span className="font-mono text-xs text-gray-500 dark:text-white/50">{Math.round(syncProgress.progress)}%</span>
+                            </div>
+                            <div className="h-2 bg-gray-200 dark:bg-white/10 rounded-full overflow-hidden">
+                                <div
+                                    className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-500 ease-out"
+                                    style={{ width: `${syncProgress.progress}%` }}
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Form - Hide when syncing */}
+                    {!isLoading && (
+                        <>
+                            {/* Quick Presets */}
+                            <div>
+                                <label className="block text-xs font-bold opacity-30 uppercase tracking-widest mb-3">Quick Select</label>
+                                <div className="flex gap-2 flex-wrap">
+                                    {[0, 7, 30].map(days => (
+                                        <button
+                                            key={days}
+                                            onClick={() => handlePreset(days)}
+                                            className="px-3 py-1.5 rounded-lg bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 border border-black/5 dark:border-white/5 text-xs font-medium opacity-70 hover:opacity-100 transition-colors"
+                                        >
+                                            {days === 0 ? 'Today' : `Last ${days} Days`}
+                                        </button>
+                                    ))}
+                                    <button
+                                        onClick={() => handlePreset(365)}
+                                        className="px-3 py-1.5 rounded-lg bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 border border-black/5 dark:border-white/5 text-xs font-medium opacity-70 hover:opacity-100 transition-colors"
+                                    >
+                                        All Chats
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Date Pickers */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold opacity-30 uppercase tracking-widest mb-2">From</label>
+                                    <div className="relative">
+                                        <Icons.CalendarDays className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30" />
+                                        <input
+                                            type="date"
+                                            value={startDate}
+                                            onChange={(e) => setStartDate(e.target.value)}
+                                            className="w-full bg-gray-100 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 dark:[color-scheme:dark]"
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold opacity-30 uppercase tracking-widest mb-2">To</label>
+                                    <div className="relative">
+                                        <Icons.CalendarDays className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30" />
+                                        <input
+                                            type="date"
+                                            value={endDate}
+                                            onChange={(e) => setEndDate(e.target.value)}
+                                            className="w-full bg-gray-100 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 dark:[color-scheme:dark]"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="pt-4 border-t border-black/5 dark:border-white/5 flex justify-end gap-3">
+                                <button
+                                    onClick={onClose}
+                                    className="px-4 py-2 rounded-lg opacity-60 hover:bg-black/5 dark:hover:bg-white/5 hover:opacity-100 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleSyncClick}
+                                    className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium transition-all flex items-center gap-2"
+                                >
+                                    Sync Now
+                                    <Icons.ChevronRight className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// --- SETTINGS MODAL ---
+
+interface SettingsModalProps {
+    onClose: () => void;
+    onThemeChange: (theme: 'light' | 'dark') => void;
+    currentTheme: 'light' | 'dark';
+    user: UserProfile;
+    onRefreshData?: () => void;
+}
+
+export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onThemeChange, currentTheme, user, onRefreshData }) => {
+    const [token, setToken] = useState('');
+    const [saved, setSaved] = useState(false);
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [showTerms, setShowTerms] = useState(false);
+
+    useEffect(() => {
+        if (user && user.omiToken) {
+            setToken(user.omiToken);
+        }
+    }, [user]);
+
+    const handleSave = async () => {
+        if (user.uid) {
+            await AuthService.updateOmiToken(user.uid, token);
+            setSaved(true);
+            setTimeout(() => {
+                setSaved(false);
+            }, 800);
+        }
+    };
+
+    const handleGenerateDummy = async () => {
+        setIsGenerating(true);
+        try {
+            await ApiService.generateDummyData();
+            setSaved(true);
+            setTimeout(() => setSaved(false), 1500);
+            if (onRefreshData) onRefreshData();
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
+    return (
+        <>
+            <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+                <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+                <div className="relative w-full max-w-md glass-panel bg-white dark:bg-[#1A1A1F] p-6 rounded-2xl animate-in fade-in zoom-in-95 duration-200 text-gray-900 dark:text-white">
+                    <div className="flex items-center justify-between mb-6">
+                        <h3 className="text-lg font-semibold">Settings</h3>
+                        <button onClick={onClose} className="opacity-40 hover:opacity-100"><Icons.Close className="w-5 h-5" /></button>
+                    </div>
+
+                    <div className="space-y-6">
+
+                        {/* Theme Switcher */}
+                        <div>
+                            <label className="block text-xs font-bold opacity-50 mb-3">Appearance</label>
+                            <div className="grid grid-cols-2 gap-3">
+                                <button
+                                    onClick={() => onThemeChange('light')}
+                                    className={`flex items-center justify-center gap-2 p-3 rounded-xl border transition-all ${currentTheme === 'light' ? 'bg-blue-500/10 border-blue-500 text-blue-500' : 'bg-gray-100 dark:bg-white/5 border-transparent opacity-50 hover:opacity-100'}`}
+                                >
+                                    <Icons.Sun className="w-5 h-5" />
+                                    <span className="font-medium">Light</span>
+                                </button>
+                                <button
+                                    onClick={() => onThemeChange('dark')}
+                                    className={`flex items-center justify-center gap-2 p-3 rounded-xl border transition-all ${currentTheme === 'dark' ? 'bg-blue-500/10 border-blue-500 text-blue-400' : 'bg-gray-100 dark:bg-white/5 border-transparent opacity-50 hover:opacity-100'}`}
+                                >
+                                    <Icons.Moon className="w-5 h-5" />
+                                    <span className="font-medium">Dark</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* API Token Section */}
+                        <div>
+                            <label className="block text-xs font-bold opacity-50 mb-2">Omi API Token</label>
+                            <input
+                                type="password"
+                                value={token}
+                                onChange={(e) => setToken(e.target.value)}
+                                placeholder="omi_dev_..."
+                                className="w-full bg-gray-100 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-xl py-3 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 font-mono"
+                            />
+                            <p className="mt-2 text-xs opacity-40">
+                                Get your token at <a href="https://docs.omi.me/doc/developer/api#key-management" target="_blank" rel="noreferrer" className="text-blue-500 dark:text-blue-400 hover:underline inline-flex items-center gap-1">docs.omi.me <Icons.ExternalLink className="w-3 h-3" /></a>
+                            </p>
+                            <div className="mt-3 flex justify-end">
+                                <button
+                                    onClick={handleSave}
+                                    className={`px-4 py-2 text-sm rounded-lg font-medium transition-all flex items-center gap-2 ${saved ? 'bg-green-500 text-white' : 'bg-gray-200 dark:bg-white/10 text-black dark:text-white hover:bg-gray-300 dark:hover:bg-white/20'}`
+                                    }
+                                >
+                                    {saved ? <><Icons.CheckCircle className="w-3 h-3" /> Saved</> : 'Save Token'}
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Timezone Section */}
+                        <div>
+                            <label className="block text-xs font-bold opacity-50 mb-2">Timezone</label>
+                            <select
+                                value={user.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone}
+                                onChange={async (e) => {
+                                    if (user.uid) await AuthService.updateTimezone(user.uid, e.target.value);
+                                }}
+                                className="w-full bg-gray-100 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-xl py-3 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 appearance-none"
+                            >
+                                {[
+                                    "UTC",
+                                    "America/New_York",
+                                    "America/Los_Angeles",
+                                    "America/Chicago",
+                                    "Europe/London",
+                                    "Europe/Paris",
+                                    "Europe/Berlin",
+                                    "Asia/Tokyo",
+                                    "Asia/Shanghai",
+                                    "Australia/Sydney",
+                                    "Pacific/Auckland",
+                                    "Asia/Dubai",
+                                    "Asia/Singapore",
+                                    "America/Sao_Paulo"
+                                ].map((tz) => (
+                                    <option key={tz} value={tz}>{tz}</option>
+                                ))}
+                            </select>
+                            <p className="mt-2 text-xs opacity-40">
+                                Used for syncing Memories correctly.
+                            </p>
+                        </div>
+
+                        {/* Developer Tools */}
+                        <div className="pt-4 border-t border-gray-200 dark:border-white/5">
+                            <label className="block text-xs font-bold opacity-50 mb-3">Developer Tools</label>
+                            <div className="space-y-2">
+                                <button
+                                    onClick={handleGenerateDummy}
+                                    disabled={isGenerating}
+                                    className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-dashed border-gray-300 dark:border-white/20 hover:bg-gray-50 dark:hover:bg-white/5 text-gray-500 dark:text-white/60 hover:text-gray-900 dark:hover:text-white transition-all"
+                                >
+                                    <Icons.Database className="w-4 h-4" />
+                                    {isGenerating ? 'Generating...' : 'Generate Demo Data'}
+                                </button>
+                                <button
+                                    onClick={async () => {
+                                        if (confirm('Are you sure you want to delete all conversations, memories, and tasks? This cannot be undone.')) {
+                                            await ApiService.clearAllData();
+                                            setSaved(true);
+                                            setTimeout(() => setSaved(false), 1500);
+                                            if (onRefreshData) onRefreshData();
+                                        }
+                                    }}
+                                    className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-red-200 dark:border-red-500/20 hover:bg-red-50 dark:hover:bg-red-900/10 text-red-600 dark:text-red-400 transition-all"
+                                >
+                                    <Icons.Trash className="w-4 h-4" />
+                                    Clear All Data
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Terms of Service */}
+                        <div className="pt-4 border-t border-gray-200 dark:border-white/5">
+                            <button
+                                onClick={() => setShowTerms(true)}
+                                className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5 text-gray-600 dark:text-white/60 hover:text-gray-900 dark:hover:text-white transition-all"
+                            >
+                                <Icons.FileText className="w-4 h-4" />
+                                <span className="text-sm">View Terms of Service</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Terms Modal */}
+            {showTerms && <TermsModal onClose={() => setShowTerms(false)} />}
+        </>
+    );
+};
+
+// --- EDIT PROFILE MODAL ---
+
+interface EditProfileModalProps {
+    onClose: () => void;
+    user: UserProfile;
+}
+
+export const EditProfileModal: React.FC<EditProfileModalProps> = ({ onClose, user }) => {
+    const [name, setName] = useState('');
+    const [isUploading, setIsUploading] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (user) setName(user.displayName || '');
+    }, [user]);
+
+    const handleSave = async () => {
+        await AuthService.updateProfile({ displayName: name });
+        onClose();
+    };
+
+    const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (!file.type.startsWith('image/')) {
+            alert('Please select an image file');
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+            alert('Image must be less than 5MB');
+            return;
+        }
+
+        setIsUploading(true);
+        try {
+            // Mock upload - just update photoURL to a local data URL for now or similar since we don't have backend storage
+            // For this local version, we will just use a fake URL or not support it fully without backend.
+            // But let's assume AuthService.updateProfile can handle it if we passed string.
+            // Converting to Base64 to store in localStorage
+            const reader = new FileReader();
+            reader.onloadend = async () => {
+                await AuthService.updateProfile({ photoURL: reader.result as string });
+                setIsUploading(false);
+            };
+            reader.readAsDataURL(file);
+
+        } catch (error: any) {
+            console.error('Failed to upload photo:', error);
+            alert('Failed to upload photo: ' + error.message);
+            setIsUploading(false);
+        }
+    };
+
+    const handleDeleteAccount = async () => {
+        setIsDeleting(true);
+        try {
+            await AuthService.deleteAccount(user.uid);
+            // User will be logged out automatically after account deletion
+        } catch (error: any) {
+            console.error('Failed to delete account:', error);
+            alert('Failed to delete account: ' + error.message);
+            setIsDeleting(false);
+            setShowDeleteConfirm(false);
+        }
+    };
+
+    return (
+        <>
+            <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+                <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+                <div className="relative w-full max-w-sm glass-panel bg-white dark:bg-[#1A1A1F] p-6 rounded-2xl animate-in fade-in zoom-in-95 duration-200 text-gray-900 dark:text-white">
+                    <h3 className="text-lg font-semibold mb-6">Edit Profile</h3>
+
+                    <div className="space-y-4">
+                        {/* Profile Photo */}
+                        <div className="flex flex-col items-center gap-3 mb-6">
+                            <div className="relative group">
+                                <div className="w-24 h-24 rounded-full bg-gradient-to-r from-pink-500 to-orange-400 p-[2px]">
+                                    <div className="w-full h-full rounded-full bg-white dark:bg-[#1A1A1F] flex items-center justify-center overflow-hidden">
+                                        {user.photoURL ? (
+                                            <img src={user.photoURL} alt={user.displayName || 'User'} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <Icons.User className="w-10 h-10 opacity-50" />
+                                        )}
+                                    </div>
+                                </div>
+                                {isUploading && (
+                                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full">
+                                        <Icons.Sync className="w-6 h-6 text-white animate-spin" />
+                                    </div>
+                                )}
+                            </div>
+
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept="image/*"
+                                onChange={handlePhotoUpload}
+                                className="hidden"
+                            />
+
+                            <button
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={isUploading}
+                                className="text-sm text-blue-500 dark:text-blue-400 hover:underline disabled:opacity-50"
+                            >
+                                {isUploading ? 'Uploading...' : user.photoURL ? 'Change Photo' : 'Upload Photo'}
+                            </button>
+                        </div>
+
+                        {/* Name Input */}
+                        <div>
+                            <label className="block text-xs font-bold opacity-50 mb-2">Display Name</label>
+                            <input
+                                type="text"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                className="w-full bg-gray-100 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-xl py-3 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                            />
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="pt-4 flex justify-end gap-3">
+                            <button onClick={onClose} className="opacity-50 hover:opacity-100 px-4 py-2">Cancel</button>
+                            <button
+                                onClick={handleSave}
+                                className="px-6 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium transition-colors"
+                            >
+                                Save
+                            </button>
+                        </div>
+
+                        {/* Delete Account Section */}
+                        <div className="pt-6 mt-6 border-t border-gray-200 dark:border-white/10">
+                            <button
+                                onClick={() => setShowDeleteConfirm(true)}
+                                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-red-200 dark:border-red-500/20 hover:bg-red-50 dark:hover:bg-red-900/10 text-red-600 dark:text-red-400 transition-colors text-sm font-medium"
+                            >
+                                <Icons.Trash className="w-4 h-4" />
+                                Delete Account
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Delete Confirmation Modal */}
+            {showDeleteConfirm && (
+                <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !isDeleting && setShowDeleteConfirm(false)} />
+                    <div className="relative w-full max-w-sm bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-2xl border border-red-200 dark:border-red-500/20 animate-in zoom-in-95 duration-200">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="p-2 rounded-xl bg-red-100 dark:bg-red-500/10">
+                                <Icons.Alert className="w-5 h-5 text-red-600 dark:text-red-400" />
+                            </div>
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Delete Account?</h3>
+                        </div>
+
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                            This action cannot be undone. Your account and all associated data (conversations, memories, action items) will be permanently deleted from our servers.
+                        </p>
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setShowDeleteConfirm(false)}
+                                disabled={isDeleting}
+                                className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5 text-gray-700 dark:text-gray-300 font-medium transition-colors disabled:opacity-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleDeleteAccount}
+                                disabled={isDeleting}
+                                className="flex-1 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                            >
+                                {isDeleting ? (
+                                    <>
+                                        <Icons.Sync className="w-4 h-4 animate-spin" />
+                                        Deleting...
+                                    </>
+                                ) : (
+                                    'Delete Forever'
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </>
+    );
+};
