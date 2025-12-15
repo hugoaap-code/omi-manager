@@ -6,11 +6,7 @@ import { Chat, ChatStatus, ChatMessage, Folder, Memory, ActionItem } from '../ty
 // API Base URL:
 // - Development (localhost): Uses Vite proxy to bypass CORS
 // - Production: Uses Firebase Function proxy to bypass CORS
-const isDevelopment = typeof window !== 'undefined' &&
-    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-const API_BASE = isDevelopment
-    ? '/omi-proxy/v1/dev'
-    : 'https://omiproxy-5bu3k7n6oa-uc.a.run.app';
+const API_BASE = '/omi-proxy/v1/dev'; // Sempre usa o proxy local do Vite para evitar CORS
 
 export const ApiService = {
     // --- Chats (Conversations) ---

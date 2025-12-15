@@ -14,9 +14,15 @@ const LOCAL_USER_KEY = 'omi_local_user_settings';
 export const AuthService = {
     // Retorna o usuário local atual ou cria um novo se não existir
     getCurrentUser: (): UserProfile => {
-        const stored = localStorage.getItem(LOCAL_USER_KEY);
-        if (stored) {
-            return JSON.parse(stored);
+        try {
+            const stored = localStorage.getItem(LOCAL_USER_KEY);
+            if (stored) {
+                return JSON.parse(stored);
+            }
+        } catch (e) {
+            console.error("Erro ao ler usuário local", e);
+            // Se falhar, limpa e cria novo
+            localStorage.removeItem(LOCAL_USER_KEY);
         }
 
         // Criar usuário padrão inicial
@@ -27,7 +33,7 @@ export const AuthService = {
             photoURL: null,
             timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
         };
-        
+
         localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(defaultUser));
         return defaultUser;
     },
@@ -36,14 +42,14 @@ export const AuthService = {
     onAuthStateChanged: (callback: (user: UserProfile | null) => void) => {
         const user = AuthService.getCurrentUser();
         callback(user);
-        return () => {}; // Unsubscribe mock
+        return () => { }; // Unsubscribe mock
     },
 
     updateProfile: async (updates: Partial<UserProfile>): Promise<UserProfile> => {
         const currentUser = AuthService.getCurrentUser();
         const updated = { ...currentUser, ...updates };
         localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(updated));
-        
+
         // Disparar evento de storage para atualizar em outras abas/componentes se necessário
         window.dispatchEvent(new Event('local-user-update'));
         return updated;
