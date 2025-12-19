@@ -19,7 +19,6 @@ interface DashboardPageProps {
     onNavigate: (context: AppContextType) => void;
     onOpenChat: (chat: Chat) => void;
     onOpenSidebar: () => void;
-    onSync: () => void;
 }
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({
@@ -33,27 +32,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     lifelogFolders,
     onNavigate,
     onOpenChat,
-    onOpenSidebar,
-    onSync
+    onOpenSidebar
 }) => {
-    const [isSyncing, setIsSyncing] = React.useState(false);
-
     // Calculate stats
-    const favoriteChats = chats.filter(c => c.isFavorite).length;
     const pendingTasks = actionItems.filter(a => !a.completed).length;
     const recentChats = chats.slice(0, 3);
     const recentMemories = lifelogs.slice(0, 3);
-
-    const handleSyncClick = async () => {
-        setIsSyncing(true);
-        try {
-            await onSync();
-        } catch (error) {
-            console.error("Sync failed", error);
-        } finally {
-            setIsSyncing(false);
-        }
-    };
 
     const StatCard = ({ icon: Icon, label, value, colorClass, onClick }: { icon: any, label: string, value: string | number, colorClass: string, onClick?: () => void }) => (
         <div
@@ -120,19 +104,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                             <p className="text-gray-600 dark:text-gray-400 text-lg">Here's what's happening in your digital brain.</p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-500 bg-white/60 dark:bg-white/5 px-4 py-2 rounded-full border border-gray-200 dark:border-white/5 shadow-sm">
-                            <Icons.Calendar className="w-4 h-4" />
-                            {new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}
-                        </div>
-                        <button
-                            onClick={handleSyncClick}
-                            disabled={isSyncing}
-                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-500/20"
-                        >
-                            <Icons.Sync className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
-                            {isSyncing ? 'Syncing...' : 'Sync Now'}
-                        </button>
+                    <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-500 bg-white/60 dark:bg-white/5 px-4 py-2 rounded-full border border-gray-200 dark:border-white/5 shadow-sm">
+                        <Icons.Calendar className="w-4 h-4" />
+                        {new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}
                     </div>
                 </div>
 
@@ -289,6 +263,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 </div>
 
             </div>
-        </div>
+        </div >
     );
 };

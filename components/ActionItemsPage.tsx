@@ -4,6 +4,7 @@ import { ActionItem, Folder } from '../types';
 import { Icons } from './Icons';
 import { ApiService } from '../services/api';
 import { ActionItemModal } from './ActionItemModal';
+import { MoveToFolderModal } from './FolderModals';
 
 interface ActionItemsPageProps {
     actionItems: ActionItem[];
@@ -11,9 +12,10 @@ interface ActionItemsPageProps {
     activeFolderId?: string;
     onUpdateActionItem: (id: string, updates: Partial<ActionItem>) => void;
     onOpenSidebar: () => void;
+    onRefresh?: () => void;
 }
 
-export const ActionItemsPage: React.FC<ActionItemsPageProps> = ({ actionItems, folders, activeFolderId, onUpdateActionItem, onOpenSidebar }) => {
+export const ActionItemsPage: React.FC<ActionItemsPageProps> = ({ actionItems, folders, activeFolderId, onUpdateActionItem, onOpenSidebar, onRefresh }) => {
     const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'completed'>('all');
     const [searchQuery, setSearchQuery] = useState('');
     const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
@@ -23,6 +25,11 @@ export const ActionItemsPage: React.FC<ActionItemsPageProps> = ({ actionItems, f
     const [selectedFolder, setSelectedFolder] = useState<string>('');
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [editingItem, setEditingItem] = useState<ActionItem | null>(null);
+
+    // Selection state for bulk actions
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [isSelectionMode, setIsSelectionMode] = useState(false);
+    const [showMoveModal, setShowMoveModal] = useState(false);
 
     const datePickerRef = React.useRef<HTMLDivElement>(null);
 
@@ -99,6 +106,80 @@ export const ActionItemsPage: React.FC<ActionItemsPageProps> = ({ actionItems, f
         return result;
     }, [actionItems, effectiveFolderId, statusFilter, searchQuery, startDate, endDate, selectedTag, sortOrder]);
 
+    // Selection handlers
+    const toggleSelect = (id: string) => {
+        const newSet = new Set(selectedIds);
+        if (newSet.has(id)) {
+            newSet.delete(id);
+        } else {
+            newSet.add(id);
+            // Ensure selection mode is active when adding items
+            setIsSelectionMode(true);
+        }
+        setSelectedIds(newSet);
+        if (newSet.size === 0) {
+            setIsSelectionMode(false);
+        }
+    };
+
+    const selectAll = () => {
+        setSelectedIds(new Set(filteredItems.map(i => i.id)));
+    };
+
+    const clearSelection = () => {
+        setSelectedIds(new Set());
+        setIsSelectionMode(false);
+    };
+
+    // Bulk actions
+    const handleBulkComplete = async () => {
+        for (const id of selectedIds) {
+            await ApiService.updateActionItem(id, { completed: true });
+            onUpdateActionItem(id, { completed: true });
+        }
+        clearSelection();
+        onRefresh?.();
+    };
+
+    const handleBulkUncomplete = async () => {
+        for (const id of selectedIds) {
+            await ApiService.updateActionItem(id, { completed: false });
+            onUpdateActionItem(id, { completed: false });
+        }
+        clearSelection();
+        onRefresh?.();
+    };
+
+    const handleBulkMove = () => {
+        setShowMoveModal(true);
+    };
+
+    const handleMoveConfirm = async (folderId: string | undefined) => {
+        setShowMoveModal(false);
+        for (const id of selectedIds) {
+            await ApiService.updateActionItem(id, { folderId: folderId || null });
+            onUpdateActionItem(id, { folderId: folderId || null });
+        }
+        clearSelection();
+        onRefresh?.();
+    };
+
+    const handleBulkApplyTag = async () => {
+        const tag = prompt("Enter tag to apply to selected items:");
+        if (tag && tag.trim()) {
+            for (const id of selectedIds) {
+                const item = actionItems.find(i => i.id === id);
+                if (item) {
+                    const newTags = [...new Set([...(item.tags || []), tag.trim()])];
+                    await ApiService.updateActionItem(id, { tags: newTags });
+                    onUpdateActionItem(id, { tags: newTags });
+                }
+            }
+            clearSelection();
+            onRefresh?.();
+        }
+    };
+
     const handleToggle = async (id: string, current: boolean) => {
         onUpdateActionItem(id, { completed: !current });
         await ApiService.updateActionItem(id, { completed: !current });
@@ -142,6 +223,14 @@ export const ActionItemsPage: React.FC<ActionItemsPageProps> = ({ actionItems, f
             return `Until ${new Date(endDate + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`;
         }
         return 'All Dates';
+    };
+
+    const handleItemClick = (item: ActionItem) => {
+        if (isSelectionMode) {
+            toggleSelect(item.id);
+        } else {
+            setEditingItem(item);
+        }
     };
 
     return (
@@ -314,12 +403,54 @@ export const ActionItemsPage: React.FC<ActionItemsPageProps> = ({ actionItems, f
                             )}
                         </button>
 
+                        {/* Selection Mode Toggle */}
+                        <button
+                            onClick={() => {
+                                setIsSelectionMode(!isSelectionMode);
+                                if (isSelectionMode) clearSelection();
+                            }}
+                            className={`flex items-center gap-2 px-3 py-2 rounded-xl border transition-colors whitespace-nowrap flex-shrink-0 ${isSelectionMode
+                                ? 'bg-blue-500 text-white border-blue-500'
+                                : 'bg-white/60 dark:bg-gray-900/50 border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-white/10'
+                                }`}
+                        >
+                            <Icons.CheckSquare className="w-4 h-4" />
+                            <span className="hidden md:inline text-xs font-medium">Select</span>
+                        </button>
+
                         {/* Results count */}
                         <div className="px-3 py-2 text-xs font-medium text-gray-500 dark:text-white/50">
                             {filteredItems.length} item{filteredItems.length !== 1 ? 's' : ''}
                         </div>
                     </div>
                 </div>
+
+                {/* Bulk Actions Bar */}
+                {isSelectionMode && selectedIds.size > 0 && (
+                    <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-500/30 animate-in slide-in-from-top-2">
+                        <span className="text-sm font-medium text-blue-700 dark:text-blue-300 mr-2">
+                            {selectedIds.size} selected
+                        </span>
+                        <button onClick={selectAll} className="px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-500/30">
+                            Select All
+                        </button>
+                        <button onClick={handleBulkComplete} className="px-3 py-1.5 text-xs font-medium rounded-lg bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-500/30 flex items-center gap-1">
+                            <Icons.Check className="w-3 h-3" /> Complete
+                        </button>
+                        <button onClick={handleBulkUncomplete} className="px-3 py-1.5 text-xs font-medium rounded-lg bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-300 hover:bg-orange-200 dark:hover:bg-orange-500/30 flex items-center gap-1">
+                            <Icons.Clock className="w-3 h-3" /> Pending
+                        </button>
+                        <button onClick={handleBulkMove} className="px-3 py-1.5 text-xs font-medium rounded-lg bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-500/30 flex items-center gap-1">
+                            <Icons.Folder className="w-3 h-3" /> Move
+                        </button>
+                        <button onClick={handleBulkApplyTag} className="px-3 py-1.5 text-xs font-medium rounded-lg bg-yellow-100 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-200 dark:hover:bg-yellow-500/30 flex items-center gap-1">
+                            <Icons.Tag className="w-3 h-3" /> Tag
+                        </button>
+                        <button onClick={clearSelection} className="ml-auto px-3 py-1.5 text-xs font-medium rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10">
+                            Cancel
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* List */}
@@ -340,13 +471,27 @@ export const ActionItemsPage: React.FC<ActionItemsPageProps> = ({ actionItems, f
                         </div>
                     )}
                     {filteredItems.map(item => (
-                        <div key={item.id} className="group flex items-start gap-4 p-4 rounded-xl bg-white/60 dark:bg-gray-900/40 border border-gray-200 dark:border-white/5 hover:border-blue-500/30 transition-all cursor-pointer" onClick={() => setEditingItem(item)}>
-                            <button
-                                onClick={(e) => { e.stopPropagation(); handleToggle(item.id, item.completed); }}
-                                className={`mt-1 flex-shrink-0 w-5 h-5 rounded border flex items-center justify-center transition-colors ${item.completed ? 'bg-blue-500 border-blue-500 text-white' : 'border-gray-400 dark:border-white/30 hover:border-blue-500'}`}
-                            >
-                                {item.completed && <Icons.Check className="w-3.5 h-3.5" />}
-                            </button>
+                        <div
+                            key={item.id}
+                            className={`group flex items-start gap-4 p-4 rounded-xl bg-white/60 dark:bg-gray-900/40 border transition-all cursor-pointer ${selectedIds.has(item.id) ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-200 dark:border-white/5 hover:border-blue-500/30'}`}
+                            onClick={() => handleItemClick(item)}
+                        >
+                            {isSelectionMode ? (
+                                <div className="mt-1 flex-shrink-0">
+                                    {selectedIds.has(item.id) ? (
+                                        <Icons.CheckCircle className="w-5 h-5 text-blue-500" />
+                                    ) : (
+                                        <Icons.Circle className="w-5 h-5 text-gray-400" />
+                                    )}
+                                </div>
+                            ) : (
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); handleToggle(item.id, item.completed); }}
+                                    className={`mt-1 flex-shrink-0 w-5 h-5 rounded border flex items-center justify-center transition-colors ${item.completed ? 'bg-blue-500 border-blue-500 text-white' : 'border-gray-400 dark:border-white/30 hover:border-blue-500'}`}
+                                >
+                                    {item.completed && <Icons.Check className="w-3.5 h-3.5" />}
+                                </button>
+                            )}
                             <div className="flex-1">
                                 <p className={`text-sm ${item.completed ? 'line-through text-gray-500 dark:text-white/40' : 'text-gray-900 dark:text-white'}`}>
                                     {item.description}
@@ -369,41 +514,38 @@ export const ActionItemsPage: React.FC<ActionItemsPageProps> = ({ actionItems, f
                                         </div>
                                     )}
 
-                                    {/* Folder Selector */}
-                                    <div className="flex items-center gap-1">
-                                        <Icons.Folder className="w-3 h-3 text-gray-400" />
-                                        <select
-                                            value={item.folderId || 'none'}
-                                            onChange={(e) => handleFolderChange(item.id, e.target.value)}
-                                            className="bg-transparent text-xs text-gray-500 dark:text-white/50 hover:text-gray-900 dark:hover:text-white focus:outline-none cursor-pointer max-w-[100px] truncate"
-                                        >
-                                            <option value="none" className="bg-white dark:bg-gray-900">No Folder</option>
-                                            {folders.map(f => (
-                                                <option key={f.id} value={f.id} className="bg-white dark:bg-gray-900">{f.name}</option>
-                                            ))}
-                                        </select>
-                                    </div>
+                                    {/* Folder */}
+                                    {item.folderId && (
+                                        <div className="flex items-center gap-1 text-xs text-gray-400 dark:text-white/30">
+                                            <Icons.Folder className="w-3 h-3" />
+                                            {folders.find(f => f.id === item.folderId)?.name || 'Unknown'}
+                                        </div>
+                                    )}
 
                                     {/* Tags */}
                                     <div className="flex items-center flex-wrap gap-1">
                                         {item.tags?.map(tag => (
                                             <span key={tag} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-white dark:bg-white/10 text-[10px] text-gray-600 dark:text-white/80 border border-gray-200 dark:border-white/5">
                                                 {tag}
-                                                <button
-                                                    onClick={() => handleRemoveTag(item.id, item.tags, tag)}
-                                                    className="hover:text-red-500"
-                                                >
-                                                    <Icons.Close className="w-2.5 h-2.5" />
-                                                </button>
+                                                {!isSelectionMode && (
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); handleRemoveTag(item.id, item.tags, tag); }}
+                                                        className="hover:text-red-500"
+                                                    >
+                                                        <Icons.Close className="w-2.5 h-2.5" />
+                                                    </button>
+                                                )}
                                             </span>
                                         ))}
-                                        <button
-                                            onClick={() => handleAddTag(item.id, item.tags)}
-                                            className="px-1.5 py-0.5 rounded-md bg-transparent hover:bg-gray-200 dark:hover:bg-white/10 text-[10px] text-gray-400 dark:text-white/40 hover:text-blue-500 transition-colors flex items-center gap-0.5"
-                                        >
-                                            <Icons.Plus className="w-2.5 h-2.5" />
-                                            Tag
-                                        </button>
+                                        {!isSelectionMode && (
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); handleAddTag(item.id, item.tags); }}
+                                                className="px-1.5 py-0.5 rounded-md bg-transparent hover:bg-gray-200 dark:hover:bg-white/10 text-[10px] text-gray-400 dark:text-white/40 hover:text-blue-500 transition-colors flex items-center gap-0.5"
+                                            >
+                                                <Icons.Plus className="w-2.5 h-2.5" />
+                                                Tag
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -421,6 +563,14 @@ export const ActionItemsPage: React.FC<ActionItemsPageProps> = ({ actionItems, f
                         onUpdateActionItem(id, updates);
                         await ApiService.updateActionItem(id, updates);
                     }}
+                />
+            )}
+
+            {showMoveModal && (
+                <MoveToFolderModal
+                    folders={folders}
+                    onClose={() => setShowMoveModal(false)}
+                    onSelect={handleMoveConfirm}
                 />
             )}
         </div>

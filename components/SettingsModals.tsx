@@ -15,23 +15,12 @@ interface SyncModalProps {
 }
 
 export const SyncModal: React.FC<SyncModalProps> = ({ onClose, onSync, isLoading, syncProgress }) => {
-    const today = new Date();
-    const [startDate, setStartDate] = useState<string>(new Date(today.setDate(today.getDate() - 7)).toISOString().split('T')[0]);
-    const [endDate, setEndDate] = useState<string>(new Date().toISOString().split('T')[0]);
-
-    const handlePreset = (days: number) => {
-        const end = new Date();
-        const start = new Date();
-        start.setDate(end.getDate() - days);
-
-        setEndDate(end.toISOString().split('T')[0]);
-        setStartDate(start.toISOString().split('T')[0]);
-    };
 
     const handleSyncClick = () => {
-        const start = new Date(startDate);
-        const end = new Date(endDate);
-        // Set end date to end of day (23:59:59.999)
+        // Sync all data (last 365 days to cover everything)
+        const end = new Date();
+        const start = new Date();
+        start.setFullYear(start.getFullYear() - 1);
         end.setHours(23, 59, 59, 999);
         onSync(start, end);
     };
@@ -46,12 +35,12 @@ export const SyncModal: React.FC<SyncModalProps> = ({ onClose, onSync, isLoading
                         <div className="p-2 rounded-lg bg-blue-500/20 text-blue-500 dark:text-blue-400">
                             <Icons.Sync className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
                         </div>
-                        <h3 className="text-lg font-semibold">Sync Omi</h3>
+                        <h3 className="text-lg font-semibold">Sync with Omi</h3>
                     </div>
                     {!isLoading && <button onClick={onClose} className="opacity-40 hover:opacity-100"><Icons.Close className="w-5 h-5" /></button>}
                 </div>
 
-                <div className="space-y-6">
+                <div className="space-y-4">
                     {/* Progress Section - Show when syncing */}
                     {isLoading && syncProgress && (
                         <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
@@ -68,74 +57,34 @@ export const SyncModal: React.FC<SyncModalProps> = ({ onClose, onSync, isLoading
                         </div>
                     )}
 
-                    {/* Form - Hide when syncing */}
+                    {/* Content - Hide when syncing */}
                     {!isLoading && (
                         <>
-                            {/* Quick Presets */}
-                            <div>
-                                <label className="block text-xs font-bold opacity-30 uppercase tracking-widest mb-3">Quick Select</label>
-                                <div className="flex gap-2 flex-wrap">
-                                    {[0, 7, 30].map(days => (
-                                        <button
-                                            key={days}
-                                            onClick={() => handlePreset(days)}
-                                            className="px-3 py-1.5 rounded-lg bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 border border-black/5 dark:border-white/5 text-xs font-medium opacity-70 hover:opacity-100 transition-colors"
-                                        >
-                                            {days === 0 ? 'Today' : `Last ${days} Days`}
-                                        </button>
-                                    ))}
-                                    <button
-                                        onClick={() => handlePreset(365)}
-                                        className="px-3 py-1.5 rounded-lg bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 border border-black/5 dark:border-white/5 text-xs font-medium opacity-70 hover:opacity-100 transition-colors"
-                                    >
-                                        All Chats
-                                    </button>
-                                </div>
+                            <p className="text-gray-600 dark:text-gray-300 text-sm">
+                                This will sync all your <strong>conversations</strong>, <strong>memories</strong>, and <strong>tasks</strong> from your Omi account.
+                            </p>
+
+                            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-500/30 rounded-xl p-3">
+                                <p className="text-xs text-amber-800 dark:text-amber-200 flex items-start gap-2">
+                                    <Icons.Alert className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                                    <span>The sync process may take a few minutes depending on the amount of data. Please wait until it completes.</span>
+                                </p>
                             </div>
 
-                            {/* Date Pickers */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-xs font-bold opacity-30 uppercase tracking-widest mb-2">From</label>
-                                    <div className="relative">
-                                        <Icons.CalendarDays className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30" />
-                                        <input
-                                            type="date"
-                                            value={startDate}
-                                            onChange={(e) => setStartDate(e.target.value)}
-                                            className="w-full bg-gray-100 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 dark:[color-scheme:dark]"
-                                        />
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold opacity-30 uppercase tracking-widest mb-2">To</label>
-                                    <div className="relative">
-                                        <Icons.CalendarDays className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30" />
-                                        <input
-                                            type="date"
-                                            value={endDate}
-                                            onChange={(e) => setEndDate(e.target.value)}
-                                            className="w-full bg-gray-100 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 dark:[color-scheme:dark]"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
+                            <button
+                                onClick={handleSyncClick}
+                                className="w-full px-4 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-medium transition-all flex items-center justify-center gap-2"
+                            >
+                                <Icons.Sync className="w-5 h-5" />
+                                Sync All Data
+                            </button>
 
-                            <div className="pt-4 border-t border-black/5 dark:border-white/5 flex justify-end gap-3">
-                                <button
-                                    onClick={onClose}
-                                    className="px-4 py-2 rounded-lg opacity-60 hover:bg-black/5 dark:hover:bg-white/5 hover:opacity-100 transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={handleSyncClick}
-                                    className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium transition-all flex items-center gap-2"
-                                >
-                                    Sync Now
-                                    <Icons.ChevronRight className="w-4 h-4" />
-                                </button>
-                            </div>
+                            <button
+                                onClick={onClose}
+                                className="w-full px-4 py-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors text-sm"
+                            >
+                                Cancel
+                            </button>
                         </>
                     )}
                 </div>

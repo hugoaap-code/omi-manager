@@ -74,6 +74,7 @@ export interface Memory {
   createdAt: string;
   updatedAt: string;
   isStarred: boolean; // Local override
+  isArchived?: boolean; // Local archive status
   folderId?: string; // Local organization
 }
 

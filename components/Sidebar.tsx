@@ -18,6 +18,7 @@ interface SidebarProps {
   onOpenEditProfile: () => void;
   onOpenGuide?: () => void;
   onOpenSearch?: () => void;
+  onSync?: () => void;
   onLogout: () => void;
   user: UserProfile | null;
   className?: string;
@@ -62,6 +63,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenEditProfile,
   onOpenGuide,
   onOpenSearch,
+  onSync,
   onLogout,
   user,
   className = '',
@@ -169,6 +171,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </button>
       </div>
 
+      {/* Sync Button */}
+      {onSync && (
+        <div className="px-2 pb-4">
+          <button
+            onClick={onSync}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white text-sm font-medium transition-all shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30"
+          >
+            <Icons.Sync className="w-4 h-4" />
+            Sync with Omi
+          </button>
+        </div>
+      )}
+
       {/* Navigation Content */}
       <div className="flex-1 overflow-y-auto">
         {activeContext === 'dashboard' ? (
@@ -249,16 +264,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onClick={() => onFilterChange('all')}
               />
               <NavItem
-                icon={Icons.Search}
-                label="Search"
-                isActive={activeFilter === 'memories'}
-                onClick={() => onFilterChange('memories', undefined)}
-              />
-              <NavItem
                 icon={Icons.Star}
                 label="Favorites"
                 isActive={activeFilter === 'favorites'}
                 onClick={() => onFilterChange('favorites')}
+              />
+              <NavItem
+                icon={Icons.Archive}
+                label="Archived"
+                isActive={activeFilter === 'archived'}
+                onClick={() => onFilterChange('archived')}
               />
             </div>
           </>

@@ -10,7 +10,6 @@ import { DashboardPage } from './components/DashboardPage';
 import { ChatModal } from './components/ChatModal';
 import { FolderModal, MoveToFolderModal, DeleteFolderModal } from './components/FolderModals';
 import { SyncModal, SettingsModal, EditProfileModal } from './components/SettingsModals';
-
 import { OnboardingModal } from './components/OnboardingModal';
 import { GlobalSearchModal } from './components/GlobalSearchModal';
 import { ApiService } from './services/api';
@@ -18,6 +17,7 @@ import { AuthService, UserProfile } from './services/auth';
 import { Chat, ChatStatus, Folder, Memory, ActionItem, ChatFilterType, AppContextType } from './types';
 import { useDebounce } from './hooks/usePerformance';
 
+// Toast Component
 const Toast = ({ message, type, onClose }: { message: string, type: 'success' | 'error' | 'info', onClose: () => void }) => {
   useEffect(() => {
     const timer = setTimeout(onClose, 4000);
@@ -47,16 +47,24 @@ const Toast = ({ message, type, onClose }: { message: string, type: 'success' | 
   );
 };
 
+// Background Component
+const Background = () => (
+  <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none bg-gray-50 dark:bg-[#050505]">
+    <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-blue-200/30 dark:bg-blue-900/10 blur-[120px]" />
+    <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-purple-200/30 dark:bg-purple-900/10 blur-[120px]" />
+  </div>
+);
+
+// Main App Component
 const App: React.FC = () => {
   // --- Auth State ---
-  // Inicializa já com o usuário local, sem wait time
-  const [user, setUser] = useState<UserProfile | null>(() => AuthService.getCurrentUser());
-  const [isAuthChecking, setIsAuthChecking] = useState(false);
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
 
-  // --- App State ---  const [chats, setChats] = useState<Chat[]>([]);
+  // --- App State ---
+  const [chats, setChats] = useState<Chat[]>([]);
   const [memories, setMemories] = useState<Memory[]>([]);
   const [actionItems, setActionItems] = useState<ActionItem[]>([]);
-
   const [folders, setFolders] = useState<Folder[]>([]);
 
   const [isLoading, setIsLoading] = useState(false);
@@ -69,7 +77,6 @@ const App: React.FC = () => {
   const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' | 'info' } | null>(null);
 
   const [activeContext, setActiveContext] = useState<AppContextType>('dashboard');
-
   const [activeFilter, setActiveFilter] = useState<ChatFilterType>('all');
   const [activeFolderId, setActiveFolderId] = useState<string | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState('');
@@ -89,22 +96,18 @@ const App: React.FC = () => {
   const [viewingChat, setViewingChat] = useState<Chat | null>(null);
   const [showFolderModal, setShowFolderModal] = useState<'create' | 'edit' | null>(null);
   const [folderToEdit, setFolderToEdit] = useState<Folder | null>(null);
-
   const [showMoveModal, setShowMoveModal] = useState(false);
   const [showSyncModal, setShowSyncModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showEditProfileModal, setShowEditProfileModal] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
-
-  // Delete Folder State
   const [folderToDelete, setFolderToDelete] = useState<Folder | null>(null);
   const [chatToMove, setChatToMove] = useState<Chat | null>(null);
 
   // Infinite Scroll
   const [visibleChatsCount, setVisibleChatsCount] = useState(30);
   const loadMoreRef = useRef<HTMLDivElement>(null);
-
 
   // --- Helper: Show Toast ---
   const showToast = (message: string, type: 'success' | 'error' | 'info') => {
@@ -113,8 +116,9 @@ const App: React.FC = () => {
 
   // --- Effects ---
 
-  // 1. Initialize Theme & Auth Listener
+  // 1. Initialize Theme & Auth
   useEffect(() => {
+    // Theme
     const storedTheme = localStorage.getItem('limitless_theme') as 'light' | 'dark';
     if (storedTheme) {
       setTheme(storedTheme);
@@ -123,7 +127,12 @@ const App: React.FC = () => {
       document.documentElement.classList.add('dark');
     }
 
-    // Listen for local updates (e.g. from SettingsModal)
+    // Auth - Get local user
+    const currentUser = AuthService.getCurrentUser();
+    setUser(currentUser);
+    setIsAuthChecking(false);
+
+    // Listen for local user updates
     const handleLocalUpdate = () => {
       setUser(AuthService.getCurrentUser());
     };
@@ -169,7 +178,6 @@ const App: React.FC = () => {
       setActionItems(fetchedActions);
 
       const allFolders = [...fetchedChatFolders, ...fetchedMemFolders, ...fetchedActionFolders];
-      // remove dups if any (shouldn't be if type separated)
       setFolders(allFolders);
 
     } catch (error) {
@@ -192,7 +200,7 @@ const App: React.FC = () => {
     refreshData();
   }, [user, refreshData]);
 
-  // 5. Show Onboarding if user has no token
+  // 4. Show Onboarding if user has no token
   useEffect(() => {
     if (user && !user.omiToken) {
       const hasSeenOnboarding = localStorage.getItem('limitless_onboarding_seen');
@@ -207,38 +215,37 @@ const App: React.FC = () => {
     localStorage.setItem('limitless_onboarding_seen', 'true');
   };
 
-
   // --- Derived State ---
   const filteredChats = useMemo(() => {
     let result = chats;
 
     switch (activeFilter) {
       case 'all':
-        result = result.filter(c => c.status === ChatStatus.ACTIVE);
+        result = result.filter((c: Chat) => c.status === ChatStatus.ACTIVE);
         break;
       case 'favorites':
-        result = result.filter(c => c.isFavorite && c.status !== ChatStatus.DELETED);
+        result = result.filter((c: Chat) => c.isFavorite && c.status !== ChatStatus.DELETED);
         break;
       case 'archived':
-        result = result.filter(c => c.status === ChatStatus.ARCHIVED);
+        result = result.filter((c: Chat) => c.status === ChatStatus.ARCHIVED);
         break;
       case 'folder':
         if (activeFolderId) {
-          result = result.filter(c => c.folderId === activeFolderId && c.status !== ChatStatus.DELETED);
+          result = result.filter((c: Chat) => c.folderId === activeFolderId && c.status !== ChatStatus.DELETED);
         }
         break;
     }
 
     if (debouncedSearchQuery.trim()) {
       const q = debouncedSearchQuery.toLowerCase();
-      result = result.filter(c =>
+      result = result.filter((c: Chat) =>
         c.title.toLowerCase().includes(q) ||
         c.summary.toLowerCase().includes(q) ||
-        c.tags.some(t => t.toLowerCase().includes(q))
+        c.tags.some((t: string) => t.toLowerCase().includes(q))
       );
     }
 
-    return result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return result.sort((a: Chat, b: Chat) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [chats, activeFilter, activeFolderId, debouncedSearchQuery]);
 
   // --- Handlers ---
@@ -275,25 +282,25 @@ const App: React.FC = () => {
   };
 
   const toggleFavorite = async (id: string, current: boolean) => {
-    setChats(prev => prev.map(c => c.id === id ? { ...c, isFavorite: !current } : c));
+    setChats((prev: Chat[]) => prev.map((c: Chat) => c.id === id ? { ...c, isFavorite: !current } : c));
     if (viewingChat && viewingChat.id === id) {
-      setViewingChat(prev => prev ? ({ ...prev, isFavorite: !current }) : null);
+      setViewingChat((prev: Chat | null) => prev ? ({ ...prev, isFavorite: !current }) : null);
     }
     await ApiService.updateChat(id, { isFavorite: !current });
   };
 
   const handleUpdateChat = async (id: string, updates: Partial<Chat>) => {
-    setChats(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
+    setChats((prev: Chat[]) => prev.map((c: Chat) => c.id === id ? { ...c, ...updates } : c));
     if (viewingChat && viewingChat.id === id) {
-      setViewingChat(prev => prev ? ({ ...prev, ...updates }) : null);
+      setViewingChat((prev: Chat | null) => prev ? ({ ...prev, ...updates }) : null);
     }
     await ApiService.updateChat(id, updates);
   };
 
   const handleUpdateActionItem = async (id: string, updates: Partial<ActionItem>) => {
-    setActionItems(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
+    setActionItems((prev: ActionItem[]) => prev.map((a: ActionItem) => a.id === id ? { ...a, ...updates } : a));
     await ApiService.updateActionItem(id, updates);
-  }
+  };
 
   // --- Folder Actions ---
   const handleSaveFolder = async (name: string, color: string) => {
@@ -303,12 +310,12 @@ const App: React.FC = () => {
       if (activeContext === 'action_items') type = 'action_item';
 
       const newFolder = await ApiService.createFolder(name, type);
-      setFolders(prev => [...prev, newFolder]);
+      setFolders((prev: Folder[]) => [...prev, newFolder]);
       showToast('Folder created', 'success');
     } else if (showFolderModal === 'edit' && folderToEdit) {
       try {
         const updated = await ApiService.updateFolder(folderToEdit.id, { name, color });
-        setFolders(prev => prev.map(f => f.id === folderToEdit.id ? updated : f));
+        setFolders((prev: Folder[]) => prev.map((f: Folder) => f.id === folderToEdit.id ? updated : f));
         showToast('Folder updated', 'success');
       } catch (error) {
         showToast('Failed to update folder', 'error');
@@ -324,7 +331,7 @@ const App: React.FC = () => {
   };
 
   const initiateDeleteFolder = (id: string) => {
-    const folder = folders.find(f => f.id === id);
+    const folder = folders.find((f: Folder) => f.id === id);
     if (folder) setFolderToDelete(folder);
   };
 
@@ -332,14 +339,14 @@ const App: React.FC = () => {
     if (!folderToDelete) return;
     const id = folderToDelete.id;
 
-    setFolders(prev => prev.filter(f => f.id !== id));
+    setFolders((prev: Folder[]) => prev.filter((f: Folder) => f.id !== id));
 
     if (activeFilter === 'folder' && activeFolderId === id) {
       handleFilterChange('all');
     }
     // Remove from chats/memories
-    setChats(prev => prev.map(c => c.folderId === id ? { ...c, folderId: undefined } : c));
-    setMemories(prev => prev.map(m => m.folderId === id ? { ...m, folderId: undefined } : m));
+    setChats((prev: Chat[]) => prev.map((c: Chat) => c.folderId === id ? { ...c, folderId: undefined } : c));
+    setMemories((prev: Memory[]) => prev.map((m: Memory) => m.folderId === id ? { ...m, folderId: undefined } : m));
 
     setFolderToDelete(null);
     showToast('Folder deleted', 'success');
@@ -361,12 +368,12 @@ const App: React.FC = () => {
 
     if (chatToMove) {
       idsToMove = [chatToMove.id];
-      setViewingChat(prev => prev ? { ...prev, folderId: targetFolderId } : null);
+      setViewingChat((prev: Chat | null) => prev ? { ...prev, folderId: targetFolderId } : null);
     } else {
       idsToMove = Array.from(selectedChatIds) as string[];
       setSelectedChatIds(new Set());
     }
-    setChats(prev => prev.map(c => idsToMove.includes(c.id) ? { ...c, folderId: targetFolderId } : c));
+    setChats((prev: Chat[]) => prev.map((c: Chat) => idsToMove.includes(c.id) ? { ...c, folderId: targetFolderId } : c));
     showToast(targetFolderId ? 'Moved to folder' : 'Removed from folder', 'success');
     await ApiService.moveChatsToFolder(idsToMove, targetFolderId);
     setChatToMove(null);
@@ -410,13 +417,6 @@ const App: React.FC = () => {
     }
   };
 
-  const Background = () => (
-    <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none bg-gray-50 dark:bg-[#050505]">
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-blue-200/30 dark:bg-blue-900/10 blur-[120px]" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-purple-200/30 dark:bg-purple-900/10 blur-[120px]" />
-    </div>
-  );
-
   // --- Render ---
   if (isAuthChecking) {
     return (
@@ -427,8 +427,11 @@ const App: React.FC = () => {
   }
 
   if (!user) {
-    // Should not happen with new AuthService logic, but as fallback:
-    return null;
+    return (
+      <div className="h-screen w-screen flex items-center justify-center bg-[#050505] text-white">
+        <p>Loading user...</p>
+      </div>
+    );
   }
 
   return (
@@ -442,12 +445,12 @@ const App: React.FC = () => {
         <ChatModal
           chat={viewingChat}
           allChats={filteredChats}
-          folders={folders.filter(f => f.type === 'chat')}
+          folders={folders.filter((f: Folder) => f.type === 'chat')}
           onClose={() => setViewingChat(null)}
-          onNavigate={(chat) => setViewingChat(chat)}
+          onNavigate={(chat: Chat) => setViewingChat(chat)}
           onToggleFavorite={toggleFavorite}
-          onStatusChange={async (id, s) => { // Status change for Chat
-            setChats(prev => prev.map(c => c.id === id ? { ...c, status: s } : c));
+          onStatusChange={async (id: string, s: ChatStatus) => {
+            setChats((prev: Chat[]) => prev.map((c: Chat) => c.id === id ? { ...c, status: s } : c));
             await ApiService.updateChat(id, { status: s });
           }}
           onUpdateChat={handleUpdateChat}
@@ -467,7 +470,7 @@ const App: React.FC = () => {
 
       {showMoveModal && (
         <MoveToFolderModal
-          folders={folders.filter(f => f.type === 'chat')} // Only chat folders for now in move modal
+          folders={folders.filter((f: Folder) => f.type === 'chat')}
           onClose={() => setShowMoveModal(false)}
           onSelect={handleMoveChats}
         />
@@ -538,7 +541,7 @@ const App: React.FC = () => {
         onContextChange={setActiveContext}
         activeFilter={activeFilter}
         activeFolderId={activeFolderId}
-        folders={folders} // Sidebar handles filtering by context logic we added
+        folders={folders}
         onFilterChange={handleFilterChange}
         onCreateFolder={() => setShowFolderModal('create')}
         onDeleteFolder={initiateDeleteFolder}
@@ -547,6 +550,7 @@ const App: React.FC = () => {
         onOpenEditProfile={() => setShowEditProfileModal(true)}
         onOpenGuide={() => setShowOnboarding(true)}
         onOpenSearch={() => setShowSearchModal(true)}
+        onSync={() => setShowSyncModal(true)}
         onLogout={handleLogout}
         user={user}
         onMobileClose={() => setIsSidebarOpen(false)}
@@ -570,11 +574,10 @@ const App: React.FC = () => {
             totalChats={chats.length}
             totalMemories={memories.length}
             totalActionItems={actionItems.length}
-            lifelogFolders={folders.filter(f => f.type === 'memory')}
-            onNavigate={(ctx) => setActiveContext(ctx)}
+            lifelogFolders={folders.filter((f: Folder) => f.type === 'memory')}
+            onNavigate={(ctx: AppContextType) => setActiveContext(ctx)}
             onOpenChat={handleOpenChat}
             onOpenSidebar={() => setIsSidebarOpen(true)}
-            onSync={() => { setShowSyncModal(true); }}
           />
         )}
 
@@ -582,10 +585,11 @@ const App: React.FC = () => {
         {activeContext === 'action_items' && (
           <ActionItemsPage
             actionItems={actionItems}
-            folders={folders.filter(f => f.type === 'action_item')}
+            folders={folders.filter((f: Folder) => f.type === 'action_item')}
             activeFolderId={activeFilter === 'folder' ? activeFolderId : undefined}
             onUpdateActionItem={handleUpdateActionItem}
             onOpenSidebar={() => setIsSidebarOpen(true)}
+            onRefresh={refreshData}
           />
         )}
 
@@ -593,7 +597,7 @@ const App: React.FC = () => {
         {activeContext === 'memories' && (
           <MemoriesPage
             memories={memories}
-            folders={folders.filter(f => f.type === 'memory')}
+            folders={folders.filter((f: Folder) => f.type === 'memory')}
             activeFilter={activeFilter}
             activeFolderId={activeFilter === 'folder' ? activeFolderId : undefined}
             onOpenSidebar={() => setIsSidebarOpen(true)}
@@ -605,20 +609,22 @@ const App: React.FC = () => {
         {activeContext === 'conversations' && (
           <ConversationsPage
             chats={chats}
-            folders={folders.filter(f => f.type === 'chat' || !f.type)}
+            folders={folders.filter((f: Folder) => f.type === 'chat' || !f.type)}
             activeFilter={activeFilter}
             activeFolderId={activeFilter === 'folder' ? activeFolderId : undefined}
             onOpenChat={handleOpenChat}
             onOpenSidebar={() => setIsSidebarOpen(true)}
             onToggleFavorite={toggleFavorite}
-            onMoveToFolder={(chatId) => {
-              const chat = chats.find(c => c.id === chatId);
+            onMoveToFolder={(chatId: string) => {
+              const chat = chats.find((c: Chat) => c.id === chatId);
               if (chat) initiateMove(chat);
             }}
-            onArchive={async (chatId) => {
+            onArchive={async (chatId: string) => {
               await handleUpdateChat(chatId, { status: ChatStatus.ARCHIVED });
               showToast('Conversation archived', 'info');
             }}
+            onUpdateChat={handleUpdateChat}
+            onRefresh={refreshData}
           />
         )}
 

@@ -1,141 +1,114 @@
-# Omi Manager - Versão Local
+# Omi Manager
 
-## 🎯 O que mudou?
+A local-first web application to manage and organize your **Omi AI** conversations, memories, and action items.
 
-Este projeto foi **completamente reconstruído para funcionar 100% offline e local**, sem depender do Firebase ou qualquer serviço em nuvem.
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
 
-## 🔧 Tecnologias
+## 🌟 Features
 
-### Armazenamento de Dados
-- **IndexedDB**: Banco de dados local do navegador para armazenar:
-  - Usuários e autenticação
-  - Chats e conversas
-  - Lifelogs
-  - Pastas e organização
-  - Sincronizações
+- **📱 Conversations**: Browse and organize your Omi AI conversations
+- **🧠 Memories**: View and search through your AI-generated memories
+- **✅ Action Items**: Track tasks extracted from your conversations
+- **📁 Folders**: Create custom folders to organize your data
+- **⭐ Favorites**: Mark important items for quick access
+- **🏷️ Tags**: Add custom tags for better filtering
+- **🔍 Search**: Full-text search across all your data
+- **🌙 Dark Mode**: Beautiful dark and light themes
 
-### Autenticação
-- Sistema de autenticação local usando IndexedDB
-- Senhas codificadas em Base64 (para produção, usar bcrypt)
-- Sessão armazenada em localStorage
+## 🔐 Privacy First
 
-### Removido
-- ❌ Firebase Authentication
-- ❌ Firebase Firestore
-- ❌ Firebase Storage
-- ❌ Firebase Functions
-- ❌ Firebase Hosting
+- **100% Local**: All data is stored in your browser's IndexedDB
+- **No Cloud Required**: Works completely offline after initial sync
+- **Your Token, Your Data**: API token never leaves your browser
 
-## 🚀 Como usar
+## 🚀 Getting Started
 
-### 1. Instalação
+### Prerequisites
+
+- Node.js 18 or higher
+- An Omi account with API access
+
+### Installation
+
 ```bash
+# Clone the repository
+git clone https://github.com/YOUR_USERNAME/omi-manager.git
+
+# Navigate to the project
+cd omi-manager
+
+# Install dependencies
 npm install
-```
 
-### 2. Executar localmente
-```bash
+# Start the development server
 npm run dev
 ```
 
-O sistema estará disponível em: **http://localhost:3000**
+The app will be available at: **http://localhost:3000**
 
-### 3. Primeiro acesso
+### Getting Your Omi API Token
 
-Você tem 2 opções:
+1. Open the **Omi App** on your phone
+2. Go to **Settings → Developers → Developer API**
+3. Copy your API token
+4. Paste it in the app's Settings
 
-#### Opção 1: Modo Demo
-- Clique em "Login as Demo" na tela de login
-- Usuário: `demo@limitless.ai`
-- Senha: `demo123`
+## 🛠️ Tech Stack
 
-#### Opção 2: Criar conta
-- Clique em "Sign Up"
-- Crie sua própria conta local
-- Os dados ficam salvos no IndexedDB do seu navegador
+- **React 18** - UI Framework
+- **TypeScript** - Type Safety
+- **Vite** - Build Tool
+- **Tailwind CSS** - Styling
+- **IndexedDB** - Local Database
+- **Lucide Icons** - Icon Library
 
-## 📦 Estrutura de Dados
-
-Todos os dados são armazenados localmente no navegador usando IndexedDB:
-
-```
-limitless_glass_manager (Database)
-├── users           # Perfis de usuário
-├── chats           # Conversas sincronizadas
-├── lifelogs        # Registros de vida
-├── folders         # Pastas de organização
-└── syncedDates     # Controle de sincronização
-```
-
-## 🔐 Segurança
-
-**IMPORTANTE**: 
-- Os dados ficam armazenados apenas no seu navegador
-- Se você limpar os dados do navegador, **perderá todos os dados**
-- Para backup, você pode exportar os dados (recurso a ser implementado)
-- As senhas são codificadas em Base64 (não use senhas importantes!)
-
-## 🔄 Sincronização com Limitless
-
-A integração com a API do Limitless continua funcionando:
-- Configure seu token da API nas configurações
-- Sincronize chats e lifelogs normalmente
-- Os dados são armazenados localmente após sync
-
-## 🛠️ Desenvolvimento
-
-### Arquitetura
+## 📁 Project Structure
 
 ```
-services/
-├── auth.ts         # Autenticação local
-└── api.ts          # API de dados (IndexedDB)
-
-lib/
-├── localDB.ts      # Camada de abstração do IndexedDB
-└── firebase.ts     # Stub vazio (compatibilidade)
+omi-manager/
+├── components/         # React components
+├── services/
+│   ├── api.ts         # API and data layer
+│   └── auth.ts        # Local authentication
+├── lib/
+│   └── localDB.ts     # IndexedDB wrapper
+├── hooks/             # Custom React hooks
+├── App.tsx            # Main application
+├── index.tsx          # Entry point
+└── types.ts           # TypeScript definitions
 ```
 
-### Principais mudanças no código
+## 📦 Available Scripts
 
-1. **auth.ts**: Substituído Firebase Auth por sistema local
-2. **api.ts**: Todas as chamadas Firestore → IndexedDB
-3. **localDB.ts**: Nova camada de banco de dados local
-4. **package.json**: Removidas dependências do Firebase
+```bash
+npm run dev      # Start development server
+npm run build    # Build for production
+npm run preview  # Preview production build
+```
 
-## 📝 TODO / Melhorias Futuras
+## ⚠️ Important Notes
 
-- [ ] Adicionar sistema de backup/export de dados
-- [ ] Implementar hash de senha adequado (bcrypt)
-- [ ] Sistema de recuperação de senha local
-- [ ] Exportar/Importar dados em JSON
-- [ ] Sincronização P2P entre dispositivos (opcional)
+- **Data Persistence**: Data is stored in your browser. Clearing browser data will delete your synced content.
+- **Sync**: You need to manually sync to get new data from Omi
+- **Independent Project**: This is a community project, not officially affiliated with Omi AI (omi.me)
 
-## 🐛 Problemas Conhecidos
+## 🤝 Contributing
 
-- Se limpar cache do navegador, perde todos os dados
-- Senhas não são criptografadas adequadamente
-- Não há sincronização entre dispositivos
+Contributions are welcome! Feel free to:
 
-## 💡 Vantagens da Versão Local
+1. Fork the repository
+2. Create a feature branch
+3. Submit a pull request
 
-✅ **Privacidade total** - Seus dados nunca saem do seu computador  
-✅ **Sem custos** - Não precisa de servidores ou Firebase  
-✅ **Offline-first** - Funciona sem internet (exceto sync Limitless)  
-✅ **Rápido** - Sem latência de rede  
-✅ **Simples** - Apenas npm install e pronto  
+## 📄 License
 
-## ⚠️ Desvantagens
+This project is open source and available under the [MIT License](LICENSE).
 
-❌ Dados limitados ao navegador  
-❌ Sem backup automático  
-❌ Não sincroniza entre dispositivos  
-❌ Pode perder dados se limpar cache  
+## 🙏 Acknowledgments
 
-## 🆘 Suporte
-
-Este é um projeto local para uso pessoal. Para dúvidas sobre a API Limitless, consulte a documentação oficial.
+- [Omi AI](https://omi.me) for their amazing AI assistant
+- The open-source community for the amazing tools
 
 ---
 
-**Desenvolvido para funcionar 100% local - Nenhum dado é enviado para nuvem**
+**Made with ❤️ for the Omi community**

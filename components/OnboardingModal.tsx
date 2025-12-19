@@ -16,43 +16,53 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onClose, onOpe
             content: (
                 <div className="space-y-4">
                     <p className="text-gray-600 dark:text-gray-300">
-                        Your personal tool to manage and organize your <strong>Limitless chats</strong> and <strong>lifelogs</strong> more effectively.
+                        Your personal tool to manage and organize your <strong>Omi AI conversations</strong>, <strong>memories</strong>, and <strong>tasks</strong> more effectively.
                     </p>
                     <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-500/30 rounded-xl p-4">
                         <p className="text-sm text-blue-800 dark:text-blue-200 flex items-start gap-2">
                             <Icons.Alert className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                            <span>This is an independent app, not affiliated with Limitless.ai. Your data is securely stored on Google Cloud servers.</span>
+                            <span>This is an independent app, not affiliated with Omi AI (omi.me). Your data is stored locally in your browser.</span>
                         </p>
                     </div>
                 </div>
             )
         },
         {
-            title: "Step 1: Connect Your Limitless Account",
+            title: "Step 1: Connect Your Omi Account",
             icon: Icons.Settings,
             content: (
                 <div className="space-y-4">
                     <p className="text-gray-600 dark:text-gray-300">
-                        To sync your data, you need to add your <strong>Limitless API Token</strong>:
+                        To sync your data, you need to add your <strong>Omi API Token</strong>:
                     </p>
                     <ol className="space-y-3 text-sm">
                         <li className="flex items-start gap-3">
                             <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xs font-bold">1</span>
                             <span className="text-gray-600 dark:text-gray-300">
-                                Visit <a href="https://limitless.ai/developers" target="_blank" rel="noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1">
-                                    limitless.ai/developers <Icons.ExternalLink className="w-3 h-3" />
-                                </a>
+                                Open the <strong>Omi App</strong> on your phone
                             </span>
                         </li>
                         <li className="flex items-start gap-3">
                             <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xs font-bold">2</span>
-                            <span className="text-gray-600 dark:text-gray-300">Copy your API token</span>
+                            <span className="text-gray-600 dark:text-gray-300">
+                                Go to <strong>Settings → Developers → Developer API</strong>
+                            </span>
                         </li>
                         <li className="flex items-start gap-3">
                             <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xs font-bold">3</span>
-                            <span className="text-gray-600 dark:text-gray-300">Paste it in Settings → Limitless API Token</span>
+                            <span className="text-gray-600 dark:text-gray-300">Copy your API token</span>
+                        </li>
+                        <li className="flex items-start gap-3">
+                            <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xs font-bold">4</span>
+                            <span className="text-gray-600 dark:text-gray-300">Paste it in Settings → Omi API Token</span>
                         </li>
                     </ol>
+                    <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-500/30 rounded-xl p-3 mt-4">
+                        <p className="text-xs text-green-800 dark:text-green-200 flex items-start gap-2">
+                            <Icons.CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                            <span><strong>Your token is stored locally only</strong> - it never leaves your browser and is not sent to any external server.</span>
+                        </p>
+                    </div>
                     <button
                         onClick={() => {
                             onClose();
@@ -77,11 +87,11 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onClose, onOpe
                     <ul className="space-y-3">
                         <li className="flex items-start gap-3">
                             <Icons.CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                            <span className="text-gray-600 dark:text-gray-300">See total chats, favorites, and lifelogs at a glance</span>
+                            <span className="text-gray-600 dark:text-gray-300">See total conversations, memories, and tasks at a glance</span>
                         </li>
                         <li className="flex items-start gap-3">
                             <Icons.CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                            <span className="text-gray-600 dark:text-gray-300">Quick access to recent chats and lifelogs</span>
+                            <span className="text-gray-600 dark:text-gray-300">Quick access to recent chats and memories</span>
                         </li>
                         <li className="flex items-start gap-3">
                             <Icons.CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
@@ -92,17 +102,17 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onClose, onOpe
             )
         },
         {
-            title: "Chats: Organize Conversations",
+            title: "Conversations: Organize Your Chats",
             icon: Icons.MessageSquare,
             content: (
                 <div className="space-y-4">
                     <p className="text-gray-600 dark:text-gray-300">
-                        Manage your <strong>Limitless AI conversations</strong>:
+                        Manage your <strong>Omi AI conversations</strong>:
                     </p>
                     <ul className="space-y-3">
                         <li className="flex items-start gap-3">
                             <Icons.Sync className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
-                            <span className="text-gray-600 dark:text-gray-300">Sync chats from your Limitless account</span>
+                            <span className="text-gray-600 dark:text-gray-300">Sync conversations from your Omi account</span>
                         </li>
                         <li className="flex items-start gap-3">
                             <Icons.Folder className="w-5 h-5 text-purple-500 mt-0.5 flex-shrink-0" />
@@ -125,29 +135,29 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onClose, onOpe
             )
         },
         {
-            title: "Lifelogs: Your Digital Journal",
+            title: "Memories & Tasks",
             icon: Icons.BookOpen,
             content: (
                 <div className="space-y-4">
                     <p className="text-gray-600 dark:text-gray-300">
-                        Browse and organize your <strong>Limitless lifelogs</strong> (daily recordings):
+                        Browse and organize your <strong>Omi memories</strong> and <strong>action items (tasks)</strong>:
                     </p>
                     <ul className="space-y-3">
                         <li className="flex items-start gap-3">
                             <Icons.Calendar className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
-                            <span className="text-gray-600 dark:text-gray-300">View lifelogs by day, week, or custom date range</span>
+                            <span className="text-gray-600 dark:text-gray-300">View memories by day, week, or custom date range</span>
                         </li>
                         <li className="flex items-start gap-3">
                             <Icons.Search className="w-5 h-5 text-purple-500 mt-0.5 flex-shrink-0" />
-                            <span className="text-gray-600 dark:text-gray-300">Search through all your recordings</span>
+                            <span className="text-gray-600 dark:text-gray-300">Search through all your memories</span>
                         </li>
                         <li className="flex items-start gap-3">
-                            <Icons.Tag className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                            <span className="text-gray-600 dark:text-gray-300">Tag and categorize your memories</span>
+                            <Icons.CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                            <span className="text-gray-600 dark:text-gray-300">Track and complete your tasks/action items</span>
                         </li>
                         <li className="flex items-start gap-3">
-                            <Icons.Star className="w-5 h-5 text-yellow-500 mt-0.5 flex-shrink-0" />
-                            <span className="text-gray-600 dark:text-gray-300">Star important moments for quick access</span>
+                            <Icons.Tag className="w-5 h-5 text-orange-500 mt-0.5 flex-shrink-0" />
+                            <span className="text-gray-600 dark:text-gray-300">Tag and categorize for better organization</span>
                         </li>
                     </ul>
                 </div>
@@ -159,7 +169,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onClose, onOpe
             content: (
                 <div className="space-y-4">
                     <p className="text-gray-600 dark:text-gray-300">
-                        You're ready to start organizing your digital memory!
+                        You're ready to start organizing your Omi data!
                     </p>
                     <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-blue-200 dark:border-blue-500/30 rounded-xl p-4">
                         <p className="text-sm text-gray-700 dark:text-gray-200 font-medium mb-2">
@@ -168,15 +178,15 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onClose, onOpe
                         <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
                             <li className="flex items-start gap-2">
                                 <span className="text-blue-500">•</span>
-                                <span>Use the context switcher (top of sidebar) to toggle between Dashboard, Chats, and Lifelogs</span>
+                                <span>Use the sidebar to switch between Dashboard, Conversations, Memories, and Tasks</span>
                             </li>
                             <li className="flex items-start gap-2">
                                 <span className="text-blue-500">•</span>
-                                <span>Click your profile picture to access Settings or Edit Profile</span>
+                                <span>Click the gear icon to access Settings and add your Omi API Token</span>
                             </li>
                             <li className="flex items-start gap-2">
                                 <span className="text-blue-500">•</span>
-                                <span>Your data syncs automatically - no need to manually save</span>
+                                <span>Your data is stored locally - syncs from Omi when you click Sync</span>
                             </li>
                         </ul>
                     </div>
