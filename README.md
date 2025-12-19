@@ -32,7 +32,7 @@ A local-first web application to manage and organize your **Omi AI** conversatio
 
 ```bash
 # Clone the repository
-git clone https://github.com/YOUR_USERNAME/omi-manager.git
+git clone https://github.com/hugoaap-code/omi-manager.git
 
 # Navigate to the project
 cd omi-manager
