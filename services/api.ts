@@ -1,7 +1,7 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import { localDB } from '../lib/localDB';
-import { Chat, ChatStatus, ChatMessage, Folder, Memory, ActionItem } from '../types';
+import { Chat, ChatStatus, ChatMessage, Folder, Memory, ActionItem, Geolocation } from '../types';
 
 // API Base URL:
 // - Development (localhost): Uses Vite proxy to bypass CORS
@@ -205,6 +205,8 @@ export const ApiService = {
                             content: seg.text || '',
                             timestamp: c.started_at || c.created_at || new Date().toISOString(),
                             speakerId: seg.speaker_id?.toString() || seg.speaker || undefined,
+                            start: seg.start,
+                            end: seg.end,
                         } as ChatMessage;
                     });
 
@@ -215,6 +217,18 @@ export const ApiService = {
                 }
 
                 if (!summary) summary = "No summary available";
+
+                // Parse geolocation if available
+                let geolocation: Geolocation | undefined;
+                if (c.geolocation) {
+                    geolocation = {
+                        latitude: c.geolocation.latitude,
+                        longitude: c.geolocation.longitude,
+                        locality: c.geolocation.locality,
+                        address: c.geolocation.address,
+                        googlePlaceId: c.geolocation.google_place_id,
+                    };
+                }
 
                 return {
                     id: c.id,
@@ -230,6 +244,9 @@ export const ApiService = {
                     unreadCount: 0,
                     messages: messages,
                     source: c.source,
+                    language: c.language,
+                    geolocation: geolocation,
+                    discarded: c.discarded,
                 };
             });
 
@@ -239,7 +256,7 @@ export const ApiService = {
             for (const chat of mappedChats) {
                 const prev = existingMap.get(chat.id);
                 const toSave = prev
-                    ? { ...chat, folderId: prev.folderId, isFavorite: prev.isFavorite, tags: prev.tags }
+                    ? { ...chat, folderId: prev.folderId, isFavorite: prev.isFavorite, tags: prev.tags, status: prev.status }
                     : chat;
                 await localDB.put('chats', toSave);
             }
@@ -297,6 +314,8 @@ export const ApiService = {
                     createdAt: dateStr,
                     updatedAt: m.updated_at || dateStr,
                     isStarred: false,
+                    manuallyAdded: m.manually_added,
+                    scoring: m.scoring,
                 };
             });
 

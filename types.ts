@@ -13,6 +13,16 @@ export interface ChatMessage {
   content: string;
   timestamp: string;
   speakerId?: string; // Omi uses speaker IDs
+  start?: number; // Segment start time in seconds
+  end?: number; // Segment end time in seconds
+}
+
+export interface Geolocation {
+  latitude?: number;
+  longitude?: number;
+  locality?: string;
+  address?: string;
+  googlePlaceId?: string;
 }
 
 export interface Chat {
@@ -30,7 +40,10 @@ export interface Chat {
   unreadCount: number;
   messages?: ChatMessage[];
   transcription?: any[]; // To store raw segments if needed
-  source?: string; // e.g. 'phone', 'omi'
+  source?: string; // e.g. 'phone', 'omi', 'plaud', 'frame', 'screenpipe'
+  language?: string; // Language code (e.g., 'en', 'pt')
+  geolocation?: Geolocation; // Location data from Omi
+  discarded?: boolean; // Whether conversation was discarded
 }
 
 export interface ActionItem {
@@ -76,8 +89,10 @@ export interface Memory {
   isStarred: boolean; // Local override
   isArchived?: boolean; // Local archive status
   folderId?: string; // Local organization
+  manuallyAdded?: boolean; // Whether memory was manually added
+  scoring?: string; // Omi internal scoring value
 }
 
-// Deprecated or mapped legacy types for compatibility if needed, 
+// Deprecated or mapped legacy types for compatibility if needed,
 // but best to switch to new names.
-export type Lifelog = Memory; 
+export type Lifelog = Memory;

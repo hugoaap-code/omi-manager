@@ -45,7 +45,12 @@ import {
   FileText,
   CheckSquare,
   Brain,
-  LayoutList
+  LayoutList,
+  MapPin,
+  Globe,
+  Hash,
+  Timer,
+  Hand
 } from 'lucide-react';
 
 export const Icons = {
@@ -96,5 +101,10 @@ export const Icons = {
   FileText,
   CheckSquare,
   Brain,
-  LayoutList
+  LayoutList,
+  MapPin,
+  Globe,
+  Hash,
+  Timer,
+  Hand
 };
