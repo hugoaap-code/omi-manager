@@ -14,6 +14,35 @@ A local-first web application to manage and organize your **Omi AI** conversatio
 - **🏷️ Tags**: Add custom tags for better filtering
 - **🔍 Search**: Full-text search across all your data
 - **🌙 Dark Mode**: Beautiful dark and light themes
+- **📤 Export**: Download all your data as JSON or Markdown
+
+## 📤 Exporting Your Data
+
+You can export all your data for backup or to use in other applications.
+
+### How to Export
+
+1. Click your **profile** in the sidebar
+2. Select **Settings**
+3. Scroll to the **Export Data** section
+4. Choose your format:
+   - **JSON** - Machine-readable, ideal for importing into other apps or databases
+   - **Markdown** - Human-readable, great for viewing in any text editor
+
+### What's Included
+
+Both formats export:
+- All conversations with transcripts
+- All memories with tags and categories
+- All action items with completion status
+- All folders and organization structure
+- Export metadata (date, statistics)
+
+### Export Filenames
+
+Files are named with the export date:
+- `omi-export-2025-12-19.json`
+- `omi-export-2025-12-19.md`
 
 ## 🔐 Privacy First
 

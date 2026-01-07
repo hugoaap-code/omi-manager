@@ -107,6 +107,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onThemeCh
     const [token, setToken] = useState('');
     const [saved, setSaved] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
+    const [exportSuccess, setExportSuccess] = useState<string | null>(null);
 
 
     useEffect(() => {
@@ -136,6 +138,28 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onThemeCh
             console.error(e);
         } finally {
             setIsGenerating(false);
+        }
+    };
+
+    const handleExport = async (format: 'json' | 'markdown') => {
+        setIsExporting(true);
+        setExportSuccess(null);
+        try {
+            const timestamp = new Date().toISOString().split('T')[0];
+            if (format === 'json') {
+                const jsonContent = await ApiService.exportAsJSON();
+                ApiService.downloadFile(jsonContent, `omi-export-${timestamp}.json`, 'application/json');
+                setExportSuccess('JSON');
+            } else {
+                const mdContent = await ApiService.exportAsMarkdown();
+                ApiService.downloadFile(mdContent, `omi-export-${timestamp}.md`, 'text/markdown');
+                setExportSuccess('Markdown');
+            }
+            setTimeout(() => setExportSuccess(null), 2000);
+        } catch (e) {
+            console.error('Export failed:', e);
+        } finally {
+            setIsExporting(false);
         }
     };
 
@@ -228,6 +252,44 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onThemeCh
                             <p className="mt-2 text-xs opacity-40">
                                 Used for syncing Memories correctly.
                             </p>
+                        </div>
+
+                        {/* Export Data */}
+                        <div className="pt-4 border-t border-gray-200 dark:border-white/5">
+                            <label className="block text-xs font-bold opacity-50 mb-2">Export Data</label>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                                Download all your data as an archive. JSON is machine-readable for importing into other apps. Markdown is human-readable.
+                            </p>
+                            <div className="grid grid-cols-2 gap-2">
+                                <button
+                                    onClick={() => handleExport('json')}
+                                    disabled={isExporting}
+                                    className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border transition-all ${
+                                        exportSuccess === 'JSON'
+                                            ? 'bg-green-500/10 border-green-500 text-green-600 dark:text-green-400'
+                                            : 'border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5 text-gray-700 dark:text-gray-300'
+                                    }`}
+                                >
+                                    <Icons.FileJson className="w-4 h-4" />
+                                    <span className="text-sm font-medium">
+                                        {exportSuccess === 'JSON' ? 'Downloaded!' : isExporting ? '...' : 'JSON'}
+                                    </span>
+                                </button>
+                                <button
+                                    onClick={() => handleExport('markdown')}
+                                    disabled={isExporting}
+                                    className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border transition-all ${
+                                        exportSuccess === 'Markdown'
+                                            ? 'bg-green-500/10 border-green-500 text-green-600 dark:text-green-400'
+                                            : 'border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5 text-gray-700 dark:text-gray-300'
+                                    }`}
+                                >
+                                    <Icons.FileCode className="w-4 h-4" />
+                                    <span className="text-sm font-medium">
+                                        {exportSuccess === 'Markdown' ? 'Downloaded!' : isExporting ? '...' : 'Markdown'}
+                                    </span>
+                                </button>
+                            </div>
                         </div>
 
                         {/* Developer Tools */}

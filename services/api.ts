@@ -456,5 +456,170 @@ export const ApiService = {
         await localDB.clear('action_items');
         await localDB.clear('folders');
         console.log("[Omi] All data cleared successfully.");
+    },
+
+    // --- Export Functions ---
+
+    // Get all data for export
+    getAllDataForExport: async () => {
+        const [chats, memories, actionItems, folders] = await Promise.all([
+            localDB.getAll<Chat>('chats'),
+            localDB.getAll<Memory>('memories'),
+            localDB.getAll<ActionItem>('action_items'),
+            localDB.getAll<Folder>('folders')
+        ]);
+
+        return {
+            exportDate: new Date().toISOString(),
+            version: '1.0',
+            data: {
+                conversations: chats || [],
+                memories: memories || [],
+                actionItems: actionItems || [],
+                folders: folders || []
+            },
+            stats: {
+                totalConversations: chats?.length || 0,
+                totalMemories: memories?.length || 0,
+                totalActionItems: actionItems?.length || 0,
+                totalFolders: folders?.length || 0
+            }
+        };
+    },
+
+    // Export as JSON
+    exportAsJSON: async (): Promise<string> => {
+        const exportData = await ApiService.getAllDataForExport();
+        return JSON.stringify(exportData, null, 2);
+    },
+
+    // Export as Markdown
+    exportAsMarkdown: async (): Promise<string> => {
+        const { data, stats, exportDate } = await ApiService.getAllDataForExport();
+
+        let md = `# Omi Data Export\n\n`;
+        md += `**Exported:** ${new Date(exportDate).toLocaleString()}\n\n`;
+        md += `## Summary\n\n`;
+        md += `- **Conversations:** ${stats.totalConversations}\n`;
+        md += `- **Memories:** ${stats.totalMemories}\n`;
+        md += `- **Action Items:** ${stats.totalActionItems}\n`;
+        md += `- **Folders:** ${stats.totalFolders}\n\n`;
+        md += `---\n\n`;
+
+        // Folders
+        if (data.folders.length > 0) {
+            md += `## Folders\n\n`;
+            for (const folder of data.folders) {
+                md += `- **${folder.name}** (${folder.type || 'chat'})\n`;
+            }
+            md += `\n---\n\n`;
+        }
+
+        // Conversations
+        if (data.conversations.length > 0) {
+            md += `## Conversations\n\n`;
+            const sortedConvs = [...data.conversations].sort((a, b) =>
+                new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            );
+
+            for (const chat of sortedConvs) {
+                const date = new Date(chat.createdAt).toLocaleDateString();
+                md += `### ${chat.title}\n\n`;
+                md += `**Date:** ${date}`;
+                if (chat.tags && chat.tags.length > 0) {
+                    md += ` | **Tags:** ${chat.tags.join(', ')}`;
+                }
+                if (chat.isFavorite) {
+                    md += ` | ⭐ Favorite`;
+                }
+                md += `\n\n`;
+
+                if (chat.summary) {
+                    md += `> ${chat.summary}\n\n`;
+                }
+
+                // Include messages/transcript
+                if (chat.messages && chat.messages.length > 0) {
+                    md += `#### Transcript\n\n`;
+                    for (const msg of chat.messages) {
+                        const speaker = msg.role === 'user' ? '**You:**' : '**Omi:**';
+                        md += `${speaker} ${msg.content}\n\n`;
+                    }
+                }
+                md += `---\n\n`;
+            }
+        }
+
+        // Memories
+        if (data.memories.length > 0) {
+            md += `## Memories\n\n`;
+            const sortedMems = [...data.memories].sort((a, b) =>
+                new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            );
+
+            for (const memory of sortedMems) {
+                const date = new Date(memory.createdAt).toLocaleDateString();
+                md += `### ${memory.title || 'Untitled Memory'}\n\n`;
+                md += `**Date:** ${date}`;
+                if (memory.category) {
+                    md += ` | **Category:** ${memory.category}`;
+                }
+                if (memory.tags && memory.tags.length > 0) {
+                    md += ` | **Tags:** ${memory.tags.join(', ')}`;
+                }
+                if (memory.isStarred) {
+                    md += ` | ⭐ Starred`;
+                }
+                md += `\n\n`;
+                md += `${memory.content}\n\n`;
+                md += `---\n\n`;
+            }
+        }
+
+        // Action Items
+        if (data.actionItems.length > 0) {
+            md += `## Action Items\n\n`;
+
+            const pending = data.actionItems.filter(a => !a.completed);
+            const completed = data.actionItems.filter(a => a.completed);
+
+            if (pending.length > 0) {
+                md += `### Pending Tasks\n\n`;
+                for (const item of pending) {
+                    const due = item.dueDate ? ` (Due: ${new Date(item.dueDate).toLocaleDateString()})` : '';
+                    md += `- [ ] ${item.description}${due}\n`;
+                    if (item.details) {
+                        md += `  - ${item.details}\n`;
+                    }
+                }
+                md += `\n`;
+            }
+
+            if (completed.length > 0) {
+                md += `### Completed Tasks\n\n`;
+                for (const item of completed) {
+                    md += `- [x] ${item.description}\n`;
+                    if (item.details) {
+                        md += `  - ${item.details}\n`;
+                    }
+                }
+                md += `\n`;
+            }
+        }
+
+        return md;
+    },
+
+    // Download helper
+    downloadFile: (content: string, filename: string, mimeType: string) => {
+        const blob = new Blob([content], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     }
 };
