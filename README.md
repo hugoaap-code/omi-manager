@@ -14,6 +14,24 @@ A local-first web application to manage and organize your **Omi AI** conversatio
 - **🏷️ Tags**: Add custom tags for better filtering
 - **🔍 Search**: Full-text search across all your data
 - **🌙 Dark Mode**: Beautiful dark and light themes
+- **🌐 Rich Metadata**: View geolocation, language, timing, and more for your conversations and memories
+
+## 🌐 Enhanced Metadata
+
+The app captures and displays additional metadata from the Omi API.
+
+### Conversations
+- **Language** - Language code of the conversation (EN, PT, ES, etc.)
+- **Geolocation** - City/locality where the conversation occurred
+- **Source** - Device/source (omi, phone, plaud, frame, screenpipe)
+- **Segment Timing** - Start/end times for each transcript segment
+
+### Memories
+- **Visibility** - Public or private status
+- **Manual** - Whether the memory was manually added
+- **Scoring** - Omi internal scoring value
+
+To fetch metadata for existing data, use **Sync with Omi** in Settings.
 
 ## 🔐 Privacy First
 

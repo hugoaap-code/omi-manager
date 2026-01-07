@@ -88,11 +88,35 @@ export const MemoryModal: React.FC<MemoryModalProps> = ({
                         </span>
                     )}
 
+                    {/* Visibility */}
+                    <span className={`px-2 py-1 rounded-lg text-xs font-medium ${memory.visibility === 'public'
+                        ? 'bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400'
+                        : 'bg-gray-100 dark:bg-gray-500/20 text-gray-600 dark:text-gray-400'
+                        }`}>
+                        {memory.visibility}
+                    </span>
+
+                    {/* Manually Added */}
+                    {memory.manuallyAdded && (
+                        <div className="flex items-center gap-1 text-purple-500 dark:text-purple-400">
+                            <Icons.Hand className="w-4 h-4" />
+                            <span className="text-xs font-medium">Manual</span>
+                        </div>
+                    )}
+
                     {/* Star */}
                     {memory.isStarred && (
                         <div className="flex items-center gap-1 text-yellow-500">
                             <Icons.Star className="w-4 h-4 fill-current" />
                             <span className="text-xs font-medium">Starred</span>
+                        </div>
+                    )}
+
+                    {/* Scoring */}
+                    {memory.scoring && (
+                        <div className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-500">
+                            <Icons.Hash className="w-3 h-3" />
+                            <span className="text-xs font-mono">{memory.scoring}</span>
                         </div>
                     )}
                 </div>

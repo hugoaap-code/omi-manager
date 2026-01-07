@@ -285,6 +285,30 @@ export const ChatModal: React.FC<ChatModalProps> = ({
               <span>{new Date(chat.createdAt).toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}</span>
             </div>
 
+            {/* Source */}
+            {chat.source && (
+              <div className="flex items-center gap-1.5">
+                <Icons.Sparkles className="w-4 h-4 opacity-70" />
+                <span className="capitalize">{chat.source}</span>
+              </div>
+            )}
+
+            {/* Language */}
+            {chat.language && (
+              <div className="flex items-center gap-1.5">
+                <Icons.Globe className="w-4 h-4 opacity-70" />
+                <span className="uppercase">{chat.language}</span>
+              </div>
+            )}
+
+            {/* Geolocation */}
+            {chat.geolocation?.locality && (
+              <div className="flex items-center gap-1.5">
+                <Icons.MapPin className="w-4 h-4 opacity-70" />
+                <span>{chat.geolocation.locality}</span>
+              </div>
+            )}
+
             {/* Folder */}
             {chat.folderId && (
               <div className="flex items-center gap-1.5">
@@ -462,8 +486,15 @@ export const ChatModal: React.FC<ChatModalProps> = ({
                           </ReactMarkdown>
                         </div>
                         <div className="flex items-center justify-between mt-2">
-                          <div className={`text-[10px] opacity-40`}>
-                            {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          <div className="flex items-center gap-2 text-[10px] opacity-40">
+                            {msg.start !== undefined && msg.end !== undefined ? (
+                              <span className="flex items-center gap-1">
+                                <Icons.Timer className="w-3 h-3" />
+                                {Math.floor(msg.start / 60)}:{(msg.start % 60).toFixed(0).padStart(2, '0')} - {Math.floor(msg.end / 60)}:{(msg.end % 60).toFixed(0).padStart(2, '0')}
+                              </span>
+                            ) : (
+                              <span>{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                            )}
                           </div>
                           <button
                             onClick={() => startEditingMessage(msg)}
